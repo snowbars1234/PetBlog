@@ -19,6 +19,16 @@ class ImageUpload extends Model
         ];
     }
     public $image;
+    public function deleteCurrentImage($currentImage)
+    {
+        if (file_exists(Yii::getAlias('@webroot/uploads/') . $currentImage) &&
+
+            is_file(Yii::getAlias('@webroot/uploads/') . $currentImage)) {
+
+            unlink(Yii::getAlias('@webroot/uploads/') . $currentImage);
+
+        }
+    }
     public function uploadFile(UploadedFile $file, $currentImage)
     {
         $this->image = $file;

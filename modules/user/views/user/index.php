@@ -17,43 +17,44 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <h1><?= Html::encode($this->title) ?></h1>
 
-    <p>
-        <?= Html::a('Create User', ['create'], ['class' => 'btn btn-success']) ?>
-    </p>
 
     <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
 
     <?= GridView::widget([
+
         'dataProvider' => $dataProvider,
-        'filterModel' => $searchModel,
+
         'columns' => [
+
             ['class' => 'yii\grid\SerialColumn'],
 
             'id',
+
             'name',
+
             'login',
+
             'password',
+
             [
 
                 'format' => 'html',
 
                 'label' => 'Image',
 
-                'value' => function($data){
+                'value' => function ($data) {
 
-                    return Html::img($data->getImage(), ['width'=>200]);
+                    return Html::img($data->getImage(), ['width' => 200]);
 
                 }
 
             ],
-            [
-                'class' => ActionColumn::className(),
-                'urlCreator' => function ($action, User $model, $key, $index, $column) {
-                    return Url::toRoute([$action, 'id' => $model->id]);
-                 }
-            ],
+
+            ['class' => 'yii\grid\ActionColumn', 'template' => '{view} {update}'],
+
         ],
-    ]); ?>
+
+    ]);  ?>
 
 
 </div>

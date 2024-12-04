@@ -89,23 +89,13 @@ class Article extends \yii\db\ActiveRecord
 
     }
 
-    public function deleteCurrentImage($currentImage)
-    {
-        if (file_exists(Yii::getAlias('@webroot/uploads/') . $currentImage) &&
-
-            is_file(Yii::getAlias('@webroot/uploads/') . $currentImage)) {
-
-            unlink(Yii::getAlias('@webroot/uploads/') . $currentImage);
-
-        }
-    }
     public function getImage(){
         if($this->image){
 
             return '/uploads/' . $this->image;
 
         }
-        return '/no-image.png';
+        return '/no_image.png';
     }
     public function beforeDelete()
     {
@@ -122,7 +112,28 @@ class Article extends \yii\db\ActiveRecord
     {
         return $this->hasMany(Comment::class, ['article_id' => 'id']);
     }
+    public function saveArticle()
+    {
 
+        $this->user_id = Yii::$app->user->id;
+
+        return $this->save();
+
+    }
+    public function getDate(){
+
+        return Yii::$app->formatter->asDate($this->date);
+
+    }
+
+    public function viewedCounter()
+    {
+
+        $this->viewed +=1;
+
+        return $this->save(false);
+
+    }
     /**
      * Gets query for [[Topic]].
      *

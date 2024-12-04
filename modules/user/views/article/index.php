@@ -1,24 +1,24 @@
 <?php
 
-use app\models\User;
+use app\models\Article;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\grid\ActionColumn;
 use yii\grid\GridView;
 
 /** @var yii\web\View $this */
-/** @var app\models\UserSearch $searchModel */
+/** @var app\models\ArticleSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
 
-$this->title = 'Users';
+$this->title = 'Articles';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="user-index">
+<div class="article-index">
 
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Create User', ['create'], ['class' => 'btn btn-success']) ?>
+        <?= Html::a('Create Article', ['create'], ['class' => 'btn btn-success']) ?>
     </p>
 
     <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
@@ -30,25 +30,27 @@ $this->params['breadcrumbs'][] = $this->title;
             ['class' => 'yii\grid\SerialColumn'],
 
             'id',
-            'name',
-            'login',
-            'password',
+            'title',
+            'description:ntext',
+            'date',
             [
-
                 'format' => 'html',
 
                 'label' => 'Image',
 
-                'value' => function($data){
+                'value' => function ($data) {
 
-                    return Html::img($data->getImage(), ['width'=>200]);
+                    return Html::img($data->getImage(), ['width' => 200]);
 
                 }
-
             ],
+            //'tag',
+            //'viewed',
+            //'topic_id',
+            //'user_id',
             [
                 'class' => ActionColumn::className(),
-                'urlCreator' => function ($action, User $model, $key, $index, $column) {
+                'urlCreator' => function ($action, Article $model, $key, $index, $column) {
                     return Url::toRoute([$action, 'id' => $model->id]);
                  }
             ],

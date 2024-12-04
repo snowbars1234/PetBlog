@@ -9,7 +9,12 @@ use yii\web\Response;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
-
+use app\models\Article;
+use app\models\Topic;
+use app\models\Comment;
+use app\models\SearchForm;
+use app\models\CommentForm;
+use yii\data\Pagination;
 class SiteController extends Controller
 {
     /**
@@ -59,44 +64,212 @@ class SiteController extends Controller
      *
      * @return string
      */
-    public function actionIndex()
-    {
-        return $this->render('index');
-    }
 
     /**
      * Login action.
      *
      * @return Response|string
      */
-    public function actionLogin()
+    public function actionView($id)
     {
-        if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
-        }
 
-        $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
-        }
+        $article = Article::findOne($id);
 
-        $model->password = '';
-        return $this->render('login', [
-            'model' => $model,
+        $popular = Article::find()->orderBy('viewed desc')->limit(3)->all();
+
+        $recent = Article::find()->orderBy('date desc')->limit(3)->all();
+
+        $topics = Topic::find()->all();
+        $comments = $article->comments;
+
+        $commentsParent = array_filter($comments, function ($k) {
+
+            return $k['comment_id'] == null;
+
+        });
+
+        $commentsChild = array_filter($comments, function ($k) {
+
+            return ($k['comment_id'] != null && !$k['delete']);
+
+        });
+
+        $commentForm = new CommentForm();
+
+        return $this->render('single', [
+
+            'article' => $article,
+
+            'popular' => $popular,
+
+            'recent' => $recent,
+
+            'topics' => $topics,
+
+            'commentsParent' => $commentsParent,
+
+            'commentsChild' => $commentsChild,
+
+            'commentForm' => $commentForm,
+
         ]);
+
+        $article->viewedCounter();
+    }
+    public function actionSearch()
+
+    {
+
+        $model = new SearchForm();
+
+        if (Yii::$app->request->isGet) {
+
+            $model->load(Yii::$app->request->get());
+
+            $data = $model->SearchAtricle(3);
+
+            $popular = Article::find()->orderBy('viewed desc')->limit(3)->all();
+
+            $recent = Article::find()->orderBy('date desc')->limit(3)->all();
+
+            $topics = Topic::find()->all();
+
+            return $this->render('search',[
+
+                'articles' => $data['articles'],
+
+                'pagination' => $data['pagination'],
+
+                'popular' => $popular,
+
+                'recent' => $recent,
+
+                'topics' => $topics,
+
+                'search' => $model->text
+
+            ]);
+
+        }
+
+    }
+    public function actionComment($id, $id_comment = null)
+    {
+
+        $model = new CommentForm();
+
+        if (Yii::$app->request->isPost) {
+
+            $model->load(Yii::$app->request->post());
+
+            if ($model->saveComment($id, $id_comment)) {
+
+                return $this->redirect(['site/view', 'id' => $id]);
+
+            }
+
+        }
+
     }
 
+    public function actionCommentDelete($id, $id_comment)
+    {
+
+        if (Yii::$app->request->isPost) {
+
+            $data = Comment::findOne($id_comment);
+
+            if ($data->user_id == Yii::$app->user->id) {
+
+                $data->delete = true;
+
+                $data->save(false);
+
+            }
+
+            return $this->redirect(['site/view', 'id' => $id]);
+
+        }
+
+    }
+    public function actionTopic($id)
+    {
+
+        $query = Article::find()->where(['topic_id'=>$id]);
+
+
+        $count = $query->count();
+
+
+        // create a pagination object with the total count
+
+        $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 2]);
+
+
+        // limit the query using the pagination and retrieve the articles
+
+        $articles = $query->offset($pagination->offset)
+
+            ->limit($pagination->limit)
+
+            ->all();
+
+
+        $popular = Article::find()->orderBy('viewed desc')->limit(2)->all();
+
+        $recent = Article::find()->orderBy('date desc')->limit(2)->all();
+
+        $topics = Topic::find()->all();
+
+        return $this->render('topic', [
+
+            'articles' => $articles,
+
+            'pagination' => $pagination,
+
+            'popular' => $popular,
+
+            'recent' => $recent,
+
+            'topics' => $topics,
+
+        ]);
+
+    }
+
+
+    public function actionIndex()
+    {
+        $query = Article::find();
+        $count = $query->count();
+        $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 2]);
+        $articles = $query->offset($pagination->offset)
+            ->limit($pagination->limit)
+            ->all();
+
+
+        $popular = Article::find()->orderBy('viewed desc')->limit(2)->all();
+
+        $recent = Article::find()->orderBy('date desc')->limit(2)->all();
+
+        $topics = Topic::find()->all();
+
+        return $this->render('index', [
+
+            'articles' => $articles,
+            'pagination' => $pagination,
+            'popular' => $popular,
+            'recent' => $recent,
+            'topics' => $topics
+        ]);
+
+    }
     /**
      * Logout action.
      *
      * @return Response
      */
-    public function actionLogout()
-    {
-        Yii::$app->user->logout();
 
-        return $this->goHome();
-    }
 
     /**
      * Displays contact page.

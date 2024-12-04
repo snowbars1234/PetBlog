@@ -1,16 +1,16 @@
 <?php
 
-namespace app\modules\admin\controllers;
+namespace app\modules\user\controllers;
 
+use app\models\ImageUpload;
 use app\models\User;
 use app\models\UserSearch;
 use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
-use app\models\ImageUpload;
-
 use yii\web\UploadedFile;
+
 /**
  * UserController implements the CRUD actions for User model.
  */
@@ -42,7 +42,9 @@ class UserController extends Controller
     public function actionIndex()
     {
         $searchModel = new UserSearch();
-        $dataProvider = $searchModel->search($this->request->queryParams);
+        $params['UserSearch']['id'] = Yii::$app->user->id;
+
+        $dataProvider = $searchModel->search($params);
 
         return $this->render('index', [
             'searchModel' => $searchModel,
@@ -58,11 +60,24 @@ class UserController extends Controller
      */
     public function actionView($id)
     {
+        $this->check($id);
         return $this->render('view', [
             'model' => $this->findModel($id),
         ]);
     }
+    public function check($id){
 
+        $model1 = $this->findModel($id);
+
+        if ($model1->id != Yii::$app->user->id){
+
+            throw new \yii\web\NotFoundHttpException();
+
+        }
+
+        return true;
+
+    }
     /**
      * Creates a new User model.
      * If creation is successful, the browser will be redirected to the 'view' page.
@@ -94,6 +109,7 @@ class UserController extends Controller
      */
     public function actionUpdate($id)
     {
+        $this->check($id);
         $model = $this->findModel($id);
 
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
@@ -114,11 +130,26 @@ class UserController extends Controller
      */
     public function actionDelete($id)
     {
+        $this->check($id);
         $this->findModel($id)->delete();
 
         return $this->redirect(['index']);
     }
+    public function actionSetImage($id)
+    {
+        $model = new ImageUpload;
 
+        if (Yii::$app->request->isPost) {
+            $article = $this->findModel($id);
+
+            $file = UploadedFile::getInstance($model, 'image');
+            if ($article->saveImage($model->uploadFile($file, $article->image))) {
+                return $this->redirect(['view', 'id' => $article->id]);
+            }
+        }
+
+        return $this->render('image', ['model' => $model]);
+    }
     /**
      * Finds the User model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
@@ -133,26 +164,5 @@ class UserController extends Controller
         }
 
         throw new NotFoundHttpException('The requested page does not exist.');
-    }
-
-    public function actionSetImage ($id)
-    {
-        $modelUser = new ImageUpload;
-        if (Yii::$app->request->isPost)
-        {
-
-            $user = $this->findModel($id);
-
-            $file = UploadedFile::getInstance($modelUser,'image');
-
-            if($user->saveImage( $modelUser->uploadFile($file, $user->image)))
-            {
-
-                return $this->redirect(['view', 'id'=>$user->id]);
-
-            }
-
-        }
-        return $this->render('image',['model'=>$modelUser]);
     }
 }

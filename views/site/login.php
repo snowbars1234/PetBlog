@@ -51,5 +51,8 @@ $this->params['breadcrumbs'][] = $this->title;
             </div>
 
         </div>
+
+        <?= Html::a('Register', ['/auth/signup'], ['class'=>'btn btn-success'])?>
+
     </div>
 </div>

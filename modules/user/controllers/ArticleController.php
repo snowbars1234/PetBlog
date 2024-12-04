@@ -1,20 +1,20 @@
 <?php
 
-namespace app\modules\admin\controllers;
+namespace app\modules\user\controllers;
 
-use app\models\User;
-use app\models\UserSearch;
+use app\models\Article;
+use app\models\ArticleSearch;
+use app\models\ImageUpload;
 use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
-use app\models\ImageUpload;
-
 use yii\web\UploadedFile;
+
 /**
- * UserController implements the CRUD actions for User model.
+ * ArticleController implements the CRUD actions for Article model.
  */
-class UserController extends Controller
+class ArticleController extends Controller
 {
     /**
      * @inheritDoc
@@ -35,45 +35,73 @@ class UserController extends Controller
     }
 
     /**
-     * Lists all User models.
+     * Lists all Article models.
      *
      * @return string
      */
     public function actionIndex()
     {
-        $searchModel = new UserSearch();
-        $dataProvider = $searchModel->search($this->request->queryParams);
+        $searchModel = new ArticleSearch();
+        $params['ArticleSearch']['user_id'] = Yii::$app->user->id;
 
+        $dataProvider = $searchModel->search($params);
         return $this->render('index', [
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
     }
+    public function check($id){
 
+        $model1 = $this->findModel($id);
+
+        if ($model1->user_id != Yii::$app->user->id){
+
+            throw new \yii\web\NotFoundHttpException();
+
+        }
+
+        return true;
+
+    }
     /**
-     * Displays a single User model.
+     * Displays a single Article model.
      * @param int $id ID
      * @return string
      * @throws NotFoundHttpException if the model cannot be found
      */
     public function actionView($id)
     {
+        $this->check($id);
         return $this->render('view', [
             'model' => $this->findModel($id),
         ]);
     }
+    public function actionSetImage($id)
+    {
+        $model = new ImageUpload;
 
+        if (Yii::$app->request->isPost) {
+            $article = $this->findModel($id);
+
+            $file = UploadedFile::getInstance($model, 'image');
+            if ($article->saveImage($model->uploadFile($file, $article->image))) {
+                return $this->redirect(['view', 'id' => $article->id]);
+            }
+        }
+
+        return $this->render('image', ['model' => $model]);
+    }
     /**
-     * Creates a new User model.
+     * Creates a new Article model.
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return string|\yii\web\Response
      */
     public function actionCreate()
     {
-        $model = new User();
+        $model = new Article();
 
         if ($this->request->isPost) {
-            if ($model->load($this->request->post()) && $model->save()) {
+            if ($model->load($this->request->post()) && $model->saveArticle()) {
                 return $this->redirect(['view', 'id' => $model->id]);
             }
         } else {
@@ -86,7 +114,7 @@ class UserController extends Controller
     }
 
     /**
-     * Updates an existing User model.
+     * Updates an existing Article model.
      * If update is successful, the browser will be redirected to the 'view' page.
      * @param int $id ID
      * @return string|\yii\web\Response
@@ -94,8 +122,8 @@ class UserController extends Controller
      */
     public function actionUpdate($id)
     {
+        $this->check($id);
         $model = $this->findModel($id);
-
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
             return $this->redirect(['view', 'id' => $model->id]);
         }
@@ -106,7 +134,7 @@ class UserController extends Controller
     }
 
     /**
-     * Deletes an existing User model.
+     * Deletes an existing Article model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
      * @param int $id ID
      * @return \yii\web\Response
@@ -114,45 +142,25 @@ class UserController extends Controller
      */
     public function actionDelete($id)
     {
+        $this->check($id);
         $this->findModel($id)->delete();
 
         return $this->redirect(['index']);
     }
 
     /**
-     * Finds the User model based on its primary key value.
+     * Finds the Article model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
      * @param int $id ID
-     * @return User the loaded model
+     * @return Article the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
     protected function findModel($id)
     {
-        if (($model = User::findOne(['id' => $id])) !== null) {
+        if (($model = Article::findOne(['id' => $id])) !== null) {
             return $model;
         }
 
         throw new NotFoundHttpException('The requested page does not exist.');
-    }
-
-    public function actionSetImage ($id)
-    {
-        $modelUser = new ImageUpload;
-        if (Yii::$app->request->isPost)
-        {
-
-            $user = $this->findModel($id);
-
-            $file = UploadedFile::getInstance($modelUser,'image');
-
-            if($user->saveImage( $modelUser->uploadFile($file, $user->image)))
-            {
-
-                return $this->redirect(['view', 'id'=>$user->id]);
-
-            }
-
-        }
-        return $this->render('image',['model'=>$modelUser]);
     }
 }
